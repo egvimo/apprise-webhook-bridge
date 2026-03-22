@@ -1,9 +1,9 @@
-# Template
+# Apprise Webhook Bridge
 
-Template repository.
+Webhook bridge for [Apprise API](https://github.com/caronc/apprise-api).
 
 ## License
 
-Copyright © 2025 egvimo.
+Copyright © 2026 egvimo.
 
 Licensed under the MIT License. See [LICENSE](LICENSE.md).

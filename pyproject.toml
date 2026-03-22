@@ -1,0 +1,30 @@
+[project]
+name = "apprise-api-headless"
+description = "Minimalistic version of Apprise API"
+readme = "README.md"
+license-files = ["LICENSE.md"]
+dynamic = ["version"]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]==0.135.1",
+    "prometheus-fastapi-instrumentator==7.1.0",
+    "pydantic-settings==2.13.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.0.2",
+    "pytest-httpserver==1.1.4",
+    "ruff==0.15.6",
+]
+
+[tool.setuptools]
+packages = ["apprise_webhook_bridge"]
+
+[tool.ruff.lint]
+extend-select = ["E", "W", "I", "B", "Q"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+log_cli = true
+log_cli_level = "DEBUG"
