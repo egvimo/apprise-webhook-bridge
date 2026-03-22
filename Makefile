@@ -12,4 +12,4 @@ test:
 	uv run pytest
 
 run:
-	uv run uvicorn apprise_webhook_bridge.main:app --reload --host 0.0.0.0 --port 8000 --log-config config/log_config.yaml
+	uv run uvicorn apprise_webhook_bridge.main:app --reload --host 0.0.0.0 --port 8001 --log-config config/log_config.yaml

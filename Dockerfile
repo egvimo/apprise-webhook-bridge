@@ -23,6 +23,6 @@ USER apprise
 
 ENV APPRISE_CONFIG_DIR="/apprise/config"
 
-EXPOSE 8000
+EXPOSE 8001
 
-CMD ["/apprise/app/.venv/bin/uvicorn", "apprise_webhook_bridge.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--log-config", "config/log_config.yaml"]
+CMD ["/apprise/app/.venv/bin/uvicorn", "apprise_webhook_bridge.main:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--log-config", "config/log_config.yaml"]
