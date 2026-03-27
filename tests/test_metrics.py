@@ -46,7 +46,7 @@ def test_notify_error_metric_increments(client: TestClient, path: str, payload: 
     before = get_metric_value(client.get("/metrics").text, metric_name)
 
     resp = client.post(path, json=payload)
-    assert resp.status_code == 500
+    assert resp.status_code == 502
 
     after = get_metric_value(client.get("/metrics").text, metric_name)
     assert after == before + 1, (

@@ -1,14 +1,10 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class HealthResponse(BaseModel):
     status: str = "OK"
-
-
-class NotifyResponse(BaseModel):
-    success: Optional[bool]
 
 
 class AlertmanagerAlert(BaseModel):

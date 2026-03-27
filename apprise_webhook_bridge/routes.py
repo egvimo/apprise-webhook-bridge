@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 import httpx
 from fastapi import APIRouter, Body, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 
 from apprise_webhook_bridge.alertmanager import convert_alert
 from apprise_webhook_bridge.config import Settings
@@ -9,7 +10,6 @@ from apprise_webhook_bridge.logging import logger
 from apprise_webhook_bridge.models import (
     AlertmanagerRequest,
     HealthResponse,
-    NotifyResponse,
 )
 
 router = APIRouter()
@@ -31,9 +31,7 @@ async def get_health():
     "/webhook/alertmanager",
     tags=["alertmanager"],
     summary="Alertmanager Webhook",
-    response_description="Return HTTP Status Code 200 (OK)",
-    status_code=status.HTTP_200_OK,
-    response_model=NotifyResponse,
+    response_description="Pass-through response from Apprise API",
 )
 async def post_alertmanager(
     config_key: Annotated[str, Query(...)],
@@ -61,20 +59,36 @@ async def post_alertmanager(
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(
+            upstream = await client.post(
                 f"{settings.apprise_api_base_url}/notify/{config_key}",
                 json=payload,
+                headers={"Accept": "application/json"},
             )
-            if response.status_code == 200:
-                return NotifyResponse(success=True)
-            else:
-                msg = (
-                    f"Apprise API returned status {response.status_code}: "
-                    f"{response.text}"
+
+            try:
+                content = upstream.json()
+            except ValueError:
+                logger.error(
+                    "Upstream returned non-JSON: %s",
+                    upstream.text,
                 )
-                logger.error(msg)
-                detail = response.text or "Failed to send notification"
-                raise HTTPException(status_code=response.status_code, detail=detail)
+                raise HTTPException(
+                    status_code=502,
+                    detail="Invalid JSON response from upstream service",
+                ) from ValueError
+
+            logger.info(
+                "Alert forwarded",
+                extra={
+                    "config_key": config_key,
+                    "status_code": upstream.status_code,
+                    "has_error": bool(content.get("error"))
+                    if isinstance(content, dict)
+                    else None,
+                },
+            )
+
+            return JSONResponse(content=content, status_code=upstream.status_code)
         except httpx.RequestError as e:
             msg = f"Error connecting to Apprise API: {e}"
             logger.error(msg)
