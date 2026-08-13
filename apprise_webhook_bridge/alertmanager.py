@@ -1,4 +1,3 @@
-from typing import Optional
 
 from apprise_webhook_bridge.models import AlertmanagerRequest
 
@@ -10,7 +9,7 @@ STATUS_ICONS = {
 
 def convert_alert(
     payload: AlertmanagerRequest,
-) -> tuple[Optional[str], str]:
+) -> tuple[str | None, str]:
     """
     Convert Alertmanager webhook payload to title and body for notification.
 
