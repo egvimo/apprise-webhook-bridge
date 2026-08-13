@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Body, HTTPException, Query, Request, status
@@ -35,7 +35,7 @@ async def get_health():
 )
 async def post_alertmanager(
     config_key: Annotated[str, Query(...)],
-    tag: Annotated[Optional[str], Query()] = None,
+    tag: Annotated[str | None, Query()] = None,
     request: Request = None,
     alertmanager_request: Annotated[AlertmanagerRequest, Body()] = None,
 ):
