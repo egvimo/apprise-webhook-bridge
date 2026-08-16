@@ -8,7 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]==0.136.0",
     "prometheus-fastapi-instrumentator==8.1.0",
-    "pydantic-settings==2.13.1",
+    "pydantic-settings==2.15.0",
 ]
 
 [dependency-groups]
