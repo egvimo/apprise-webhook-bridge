@@ -1,4 +1,3 @@
-
 from apprise_webhook_bridge.models import AlertmanagerRequest
 
 STATUS_ICONS = {

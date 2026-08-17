@@ -34,9 +34,9 @@ async def get_health():
     response_description="Pass-through response from Apprise API",
 )
 async def post_alertmanager(
+    request: Request,
     config_key: Annotated[str, Query(...)],
     tag: Annotated[str | None, Query()] = None,
-    request: Request = None,
     alertmanager_request: Annotated[AlertmanagerRequest, Body()] = None,
 ):
     """
@@ -51,45 +51,55 @@ async def post_alertmanager(
         tag: Optional tag to use for notifications
     """
     settings: Settings = request.app.state.settings
+    client: httpx.AsyncClient = request.app.state.http_client
+
     title, body = convert_alert(alertmanager_request)
 
     payload = {"body": body, "title": title}
     if tag:
         payload["tag"] = tag
 
-    async with httpx.AsyncClient() as client:
+    upstream_url = f"{settings.apprise_api_base_url.rstrip('/')}/notify/{config_key}"
+
+    try:
+        upstream = await client.post(
+            upstream_url,
+            json=payload,
+            headers={"Accept": "application/json"},
+        )
+
         try:
-            upstream = await client.post(
-                f"{settings.apprise_api_base_url}/notify/{config_key}",
-                json=payload,
-                headers={"Accept": "application/json"},
+            content = upstream.json()
+        except ValueError:
+            logger.error(
+                "Upstream returned non-JSON: %s",
+                upstream.text,
             )
+            raise HTTPException(
+                status_code=502,
+                detail="Invalid JSON response from upstream service",
+            ) from ValueError
 
-            try:
-                content = upstream.json()
-            except ValueError:
-                logger.error(
-                    "Upstream returned non-JSON: %s",
-                    upstream.text,
-                )
-                raise HTTPException(
-                    status_code=502,
-                    detail="Invalid JSON response from upstream service",
-                ) from ValueError
+        logger.info(
+            "Alert forwarded",
+            extra={
+                "config_key": config_key,
+                "status_code": upstream.status_code,
+                "has_error": bool(content.get("error"))
+                if isinstance(content, dict)
+                else None,
+            },
+        )
 
-            logger.info(
-                "Alert forwarded",
-                extra={
-                    "config_key": config_key,
-                    "status_code": upstream.status_code,
-                    "has_error": bool(content.get("error"))
-                    if isinstance(content, dict)
-                    else None,
-                },
-            )
-
-            return JSONResponse(content=content, status_code=upstream.status_code)
-        except httpx.RequestError as e:
-            msg = f"Error connecting to Apprise API: {e}"
-            logger.error(msg)
-            raise HTTPException(status_code=424, detail=msg) from e
+        return JSONResponse(content=content, status_code=upstream.status_code)
+    except httpx.RequestError as e:
+        logger.exception(
+            "Failed to connect to Apprise API",
+            extra={
+                "exception_type": type(e).__name__,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to reach Apprise API",
+        ) from e

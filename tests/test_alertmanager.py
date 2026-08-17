@@ -36,24 +36,15 @@ def test_alertmanager_connection_error(client: TestClient, monkeypatch):
     async def mock_post(*args, **kwargs):
         raise httpx.RequestError("connection failed")
 
-    class MockAsyncClient:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            pass
-
-        post = mock_post
-
-    monkeypatch.setattr("httpx.AsyncClient", lambda: MockAsyncClient())
+    monkeypatch.setattr(client.app.state.http_client, "post", mock_post)
 
     response = client.post(
         "/webhook/alertmanager?config_key=test",
         json=BASE_PAYLOAD,
     )
 
-    assert response.status_code == 424
-    assert "Error connecting to Apprise API" in response.text
+    assert response.status_code == 502
+    assert "Unable to reach Apprise API" in response.text
 
 
 def test_convert_alert_returns_title_and_body():
